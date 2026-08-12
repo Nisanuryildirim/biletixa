@@ -1,0 +1,15 @@
+.env
+.env.local
+.env.*
+!.env.example
+
+node_modules/
+.next/
+target/
+
+*.log
+
+*-test.json
+bcrypt-*.json
+register-final.json
+*.bak

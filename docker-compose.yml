@@ -1,0 +1,168 @@
+services:
+
+  event-mongo:
+    image: mongo:8
+    container_name: biletixa-event-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - event_mongo_data:/data/db
+    networks:
+      - biletixa-network
+
+  ticket-mongo:
+    image: mongo:8
+    container_name: biletixa-ticket-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - ticket_mongo_data:/data/db
+    networks:
+      - biletixa-network
+
+  payment-mongo:
+    image: mongo:8
+    container_name: biletixa-payment-mongo
+    ports:
+      - "27019:27017"
+    volumes:
+      - payment_mongo_data:/data/db
+    networks:
+      - biletixa-network
+
+  favorite-mongo:
+    image: mongo:8
+    container_name: biletixa-favorite-mongo
+    ports:
+      - "27020:27017"
+    volumes:
+      - favorite_mongo_data:/data/db
+    networks:
+      - biletixa-network
+
+  user-mongo:
+    image: mongo:8
+    container_name: biletixa-user-mongo
+    ports:
+      - "27021:27017"
+    volumes:
+      - user_mongo_data:/data/db
+    networks:
+      - biletixa-network
+
+  event-service:
+    build:
+      context: ./microservices/event-service/event-service
+      dockerfile: Dockerfile
+    container_name: biletixa-event-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_MONGODB_URI: mongodb://event-mongo:27017/biletixa_event_db
+    depends_on:
+      - event-mongo
+    networks:
+      - biletixa-network
+
+  ticket-service:
+    build:
+      context: ./microservices/ticket-service/ticket-service
+      dockerfile: Dockerfile
+    container_name: biletixa-ticket-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_MONGODB_URI: mongodb://ticket-mongo:27017/biletixa_ticket_db
+    depends_on:
+      - ticket-mongo
+    networks:
+      - biletixa-network
+
+  payment-service:
+    build:
+      context: ./microservices/payment-service/payment-service
+      dockerfile: Dockerfile
+    container_name: biletixa-payment-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_MONGODB_URI: mongodb://payment-mongo:27017/biletixa_payment_db
+    depends_on:
+      - payment-mongo
+    networks:
+      - biletixa-network
+
+  favorite-service:
+    build:
+      context: ./microservices/favorite-service/favorite-service
+      dockerfile: Dockerfile
+    container_name: biletixa-favorite-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_MONGODB_URI: mongodb://favorite-mongo:27017/biletixa_favorite_db
+    depends_on:
+      - favorite-mongo
+    networks:
+      - biletixa-network
+
+  user-service:
+    build:
+      context: ./microservices/user-service/user-service
+      dockerfile: Dockerfile
+    container_name: biletixa-user-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_MONGODB_URI: mongodb://user-mongo:27017/biletixa_user_db
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    depends_on:
+      - user-mongo
+    networks:
+      - biletixa-network
+
+  api-gateway:
+    build:
+      context: ./microservices/api-gateway/api-gateway
+      dockerfile: Dockerfile
+    container_name: biletixa-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EVENT_SERVICE_URL: http://event-service:8081
+      TICKET_SERVICE_URL: http://ticket-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8083
+      FAVORITE_SERVICE_URL: http://favorite-service:8084
+      USER_SERVICE_URL: http://user-service:8085
+    depends_on:
+      - event-service
+      - ticket-service
+      - payment-service
+      - favorite-service
+      - user-service
+    networks:
+      - biletixa-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: biletixa-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - biletixa-network
+
+volumes:
+  event_mongo_data:
+  ticket_mongo_data:
+  payment_mongo_data:
+  favorite_mongo_data:
+  user_mongo_data:
+
+networks:
+  biletixa-network:
+    driver: bridge
